@@ -26,7 +26,7 @@
 #include <iostream>
 #include <fstream>
 #include <iosfwd>
-#include<algorithm>
+#include <algorithm>
 #include <pcl/filters/voxel_grid.h>
 class novatel_mapping {
 public:
@@ -44,6 +44,7 @@ public:
     std::vector<novatel_oem7_msgs::BESTPOS> oem7720Odom;
     std::vector<sensor_msgs::Imu> oem7720Imu;
     std::vector<nav_msgs::Odometry> odom_buffer;
+    std::vector<ros::Time> Time_buffer;
     std::vector<nav_msgs::Odometry> odom_buffer_fast;
     std::vector<Eigen::Quaterniond> q_buffer;
     std::vector<Eigen::Vector3d> t_buffer;

@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "novatel_oem7_msgs/BESTPOS.h"
-#include "g2oIO/PoseGraphIO.h"
+//#include "g2oIO/PoseGraphIO.h"
 class ReadBag {
 public:
 	ReadBag(){bag_strat_time.init();};

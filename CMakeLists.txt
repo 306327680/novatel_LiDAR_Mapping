@@ -46,8 +46,8 @@ include_directories(${gps_common_REQUIRED_INCLUDE_DIRS})
 find_package(Sophus REQUIRED)
 include_directories(${Sophus_INCLUDE_DIRS})
 
-ADD_LIBRARY(poseIO SHARED include/g2oIO/PoseGraphIO.h include/g2oIO/PoseGraphIO.cpp)
-target_link_libraries(poseIO g2o_core g2o_stuff g2o_types_slam3d ${CHOLMOD_LIBRARIES})
+#ADD_LIBRARY(poseIO SHARED include/g2oIO/PoseGraphIO.h include/g2oIO/PoseGraphIO.cpp)
+#target_link_libraries(poseIO g2o_core g2o_stuff g2o_types_slam3d ${CHOLMOD_LIBRARIES})
 
 add_library(registration
         include/registration/registration.cpp
@@ -77,7 +77,6 @@ add_library(readbag
         include/DataIO/ReadBag.h include/DataIO/ReadBag.cpp)
 target_link_libraries(readbag
         ${novatel_oem7_msgs_LIBRARIES}
-        poseIO
         GPS
         ${rosbag_LIBRARIES}
         ${cv_bridge_LIBRARIES}
@@ -88,7 +87,7 @@ target_link_libraries(readbag
 add_executable(Mapping_Multi_thread main.cpp   include/CSV/CSVio.cpp include/CSV/CSVio.h
         )
 target_link_libraries(Mapping_Multi_thread
-        poseIO
+
         readbag
         sophus
         novatel

@@ -54,25 +54,7 @@ void ReadBag::getPath(std::string path) {
 				}
 			}
 	}
-	//这个是一起以前的
-	/*	topics.push_back(std::string(endocder_));
-	topics.push_back(std::string(gps_msg_pos_));
- 
-	rosbag::View view(bag, rosbag::TopicQuery(topics));
-	//读广场的也就几秒
-	BOOST_FOREACH(rosbag::MessageInstance const m, view)
-	{
-		nav_msgs::Odometry::ConstPtr s = m.instantiate<nav_msgs::Odometry>();
-		if (s != NULL){
-		 	Eigen_encoder.emplace_back(s->pose.pose.position.x,s->pose.pose.position.y,s->pose.pose.position.z);
-		}
-		sensor_msgs::NavSatFix::ConstPtr gps = m.instantiate<sensor_msgs::NavSatFix>();
-		if(gps != NULL){
-			gpstools.updateGPSpose(*gps);
-			Eigen_GPS.emplace_back(gpstools.gps_pos_);
-		}
-	}
-*/
+
 bag.close();
 	std::cout<<"read bag finish! "<<Eigen_GPS.size()<<" "<<Eigen_encoder.size()<<std::endl;
 }
@@ -742,7 +724,7 @@ void ReadBag::readINS(std::string path, std::string save_path) {
 					inter_times++;
 				}
 	//2. 读取ins
-	PoseGraphIO Pio;
+
 	Eigen::Isometry3d is_test;
 	is_test = Eigen::Isometry3d::Identity();
 	tf::Transform tf_test;
@@ -759,9 +741,9 @@ void ReadBag::readINS(std::string path, std::string save_path) {
 					nav_msgs::Odometry::ConstPtr s = m.instantiate<nav_msgs::Odometry>();
 					tf::poseMsgToTF(s->pose.pose, tf_test);
 					tf::transformTFToEigen(tf_test, is_test);
-					Pio.insertPose(is_test);
+
 				}
-	Pio.saveGraph(ss.str());
+
 }
 
 void ReadBag::readOuster(std::string path, std::string save_path) {
@@ -830,6 +812,7 @@ void ReadBag::read7720_Odom_Imu(std::string path){
                     oem7720Odom.push_back(temp);
                 }
     topics.clear();
+    std::cout<<"bestpos ok"<<std::endl;
     topics.push_back(std::string("/gps/imu"));
     rosbag::View view1(bag, rosbag::TopicQuery(topics));
     BOOST_FOREACH(rosbag::MessageInstance const m, view1)
@@ -839,6 +822,7 @@ void ReadBag::read7720_Odom_Imu(std::string path){
                     temp1 = *s;
                     oem7720Imu.push_back(temp1);
                 }
+    std::cout<<"imu ok"<<std::endl;
 }
 
 void ReadBag::writeOdom(std::vector<nav_msgs::Odometry> odom, std::string path) {

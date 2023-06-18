@@ -8,11 +8,12 @@ int main(int argc, char** argv){
     ros::init(argc, argv, "novatel_mapping");
     ReadBag rb;
     novatel_mapping nm;
-    std::string bag_path = "/home/echo/bag/7720_Lidar/day1.bag";
+    std::string bag_path = "/home/echo/bag/merge/raw_imu.bag";
     rb.read7720_Odom_Imu(bag_path);
+    std::cout<<"odom ok"<<std::endl;
     nm.bag_path = bag_path;
-    nm.save_path = "/home/echo/bag/7720_Lidar/pcd";
-    nm.global_path = "/home/echo/bag/7720_Lidar/global_seq";
+    nm.save_path = "/home/echo/pcd";
+    nm.global_path = "/home/echo/bag/7720_Lidar/global";
     nm.las_path = "/home/echo/bag/7720_Lidar/las";
     std::cout<<rb.oem7720Imu.size()<<std::endl;
     std::cout<<rb.oem7720Odom.size()<<std::endl;
