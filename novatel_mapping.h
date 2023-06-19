@@ -20,6 +20,7 @@
 #include <rosbag/view.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_types.h>
+#include <pcl/registration/icp.h>
 #include "pointType/pointTypes.h"
 #include <pcl/io/pcd_io.h>
 #include <liblas/liblas.hpp>
@@ -28,6 +29,7 @@
 #include <iosfwd>
 #include <algorithm>
 #include <pcl/filters/voxel_grid.h>
+#include "registration/registration.h"
 class novatel_mapping {
 public:
     novatel_mapping(){};
@@ -36,6 +38,10 @@ public:
     void movingAverangeFilterIMU( );
     void calculateOdomVector();
     void transformPointCloud();
+    void transformPoint(pcl::PointCloud<VLPPoint> vlp_pcd,VLPPointCloud &raw_pcd,
+                        int &index,pcl::PointCloud<VLPPoint> &vlp_pcd_save,  double time,
+                        pcl::PointXYZI &vlp_global_point,pcl::PointCloud<pcl::PointXYZI> &vlp_global_unDownSample,
+                        pcl::PointCloud<pcl::PointXYZI> &scan_global);
     std::string bag_path;
     std::string save_path;
     std::string global_path;
@@ -44,16 +50,22 @@ public:
     std::vector<novatel_oem7_msgs::BESTPOS> oem7720Odom;
     std::vector<sensor_msgs::Imu> oem7720Imu;
     std::vector<nav_msgs::Odometry> odom_buffer;
+    nav_msgs::Odometry icp_error;
     std::vector<ros::Time> Time_buffer;
     std::vector<nav_msgs::Odometry> odom_buffer_fast;
     std::vector<Eigen::Quaterniond> q_buffer;
     std::vector<Eigen::Vector3d> t_buffer;
     std::vector<double> time_delay_fix_table;
     CSVio CSV;
+    registration ICP;
     //las
     liblas::Header header;
     std::ofstream ofs;
     liblas::SpatialReference srs;
+    Eigen::Affine3d icp_result;
+    pcl::PointCloud<pcl::PointXYZI> local_map;
+    pcl::PointCloud<pcl::PointXYZI> local_source;
+    pcl::PointCloud<pcl::PointXYZI> scan_global;
     double time_start;
 
 private:
