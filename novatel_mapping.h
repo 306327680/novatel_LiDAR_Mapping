@@ -41,7 +41,7 @@ public:
     void transformPoint(pcl::PointCloud<VLPPoint> vlp_pcd,VLPPointCloud &raw_pcd,
                         int &index,pcl::PointCloud<VLPPoint> &vlp_pcd_save,  double time,
                         pcl::PointXYZI &vlp_global_point,pcl::PointCloud<pcl::PointXYZI> &vlp_global_unDownSample,
-                        pcl::PointCloud<pcl::PointXYZI> &scan_global);
+                        pcl::PointCloud<pcl::PointXYZI> &scan_global,int inter_times);
     std::string bag_path;
     std::string save_path;
     std::string global_path;
@@ -50,6 +50,8 @@ public:
     std::vector<novatel_oem7_msgs::BESTPOS> oem7720Odom;
     std::vector<sensor_msgs::Imu> oem7720Imu;
     std::vector<nav_msgs::Odometry> odom_buffer;
+    Eigen::Affine3d T_stamp;
+    Eigen::Affine3d Ext_param_ave;
     nav_msgs::Odometry icp_error;
     std::vector<ros::Time> Time_buffer;
     std::vector<nav_msgs::Odometry> odom_buffer_fast;

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.24)
 project(novatel_LiDAR_Mpping)
 
 
-set(CMAKE_CXX_STANDARD 14 -O3)
+set(CMAKE_CXX_STANDARD 14 -O1)
 list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules )
 include_directories( include)
 find_package(PCL REQUIRED)

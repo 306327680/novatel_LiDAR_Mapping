@@ -69,6 +69,15 @@ pcl::PointCloud<pcl::PointXYZI> registration::normalIcpRegistration(pcl::PointCl
 	pcl::copyPointCloud(target,*target1);
 	pcl::PointCloud<pcl::PointXYZI>::Ptr source1(new pcl::PointCloud<pcl::PointXYZI>);
 	pcl::copyPointCloud(*source,*source1);
+    pcl::UniformSampling<pcl::PointXYZI> filter_us;
+
+//    filter_us.setInputCloud(source);
+//    filter_us.setRadiusSearch(0.15f);
+//    filter_us.filter(*source);
+//
+    filter_us.setInputCloud(target1);
+    filter_us.setRadiusSearch(0.15f);//室内
+    filter_us.filter(*target1);
 
 	addNormal(source1, cloud_source_normals);
 	addNormal(target1, cloud_target_normals);
