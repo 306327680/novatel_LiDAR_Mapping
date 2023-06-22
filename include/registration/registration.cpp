@@ -50,7 +50,7 @@ void registration::SetPlaneICP() {
 	icp->setMaximumIterations(30);
 	icp->setMaxCorrespondenceDistance(0.1);
 	icp->setTransformationEpsilon(0.0001);
-	icp->setEuclideanFitnessEpsilon(0.0001);
+	//icp->setEuclideanFitnessEpsilon(0.0001);
 	this->pcl_plane_plane_icp = icp;
 	
 }
@@ -71,12 +71,11 @@ pcl::PointCloud<pcl::PointXYZI> registration::normalIcpRegistration(pcl::PointCl
 	pcl::copyPointCloud(*source,*source1);
     pcl::UniformSampling<pcl::PointXYZI> filter_us;
 
-//    filter_us.setInputCloud(source);
-//    filter_us.setRadiusSearch(0.15f);
-//    filter_us.filter(*source);
-//
+    filter_us.setInputCloud(source1);
+    filter_us.setRadiusSearch(0.2f);//室内
+    filter_us.filter(*source1);
     filter_us.setInputCloud(target1);
-    filter_us.setRadiusSearch(0.15f);//室内
+    filter_us.setRadiusSearch(0.2f);//室内
     filter_us.filter(*target1);
 
 	addNormal(source1, cloud_source_normals);

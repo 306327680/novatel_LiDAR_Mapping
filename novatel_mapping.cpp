@@ -309,11 +309,12 @@ void novatel_mapping::transformPoint(pcl::PointCloud<VLPPoint> vlp_pcd,VLPPointC
     Eigen::Matrix4d offset;
     Eigen::Affine3d T_offset;
     pcl::PointCloud<VLPPoint> ds_global_map;
-    offset <<       0.999886 ,-0.00384411  ,-0.0146572, -0.00136512,
-                    0.00373848   , 0.999967 ,-0.00722661 , 0.00098448,
-                    0.0146845  ,0.00717099  ,  0.999866 ,  0.0169691,
-                    0      ,     0    ,       0      ,     1 ;
-    T_offset.matrix() = offset;
+//    offset <<       0.999886 ,-0.00384411  ,-0.0146572, -0.00136512,
+//                    0.00373848   , 0.999967 ,-0.00722661 , 0.00098448,
+//                    0.0146845  ,0.00717099  ,  0.999866 ,  0.0169691,
+//                    0      ,     0    ,       0      ,     1 ;
+//    T_offset.matrix() = offset;
+    T_offset = Ext_param_ave;
     //q_offset = Eigen::Quaterniond (0.9999966,0.0021817, -0.0013963, 0.0); // 0.0021817, -0.0013963, 0, 0.9999966
     q_offset.setIdentity();
     pcl::PointCloud<pcl::PointXYZI> scan_local;
@@ -367,7 +368,7 @@ void novatel_mapping::transformPoint(pcl::PointCloud<VLPPoint> vlp_pcd,VLPPointC
             temp.x = point.x();
             temp.y = point.y();
             temp.z = point.z();
-            if (sqrt(vlp_pcd[i].x * vlp_pcd[i].x + vlp_pcd[i].y * vlp_pcd[i].y + vlp_pcd[i].z * vlp_pcd[i].z) < 20 && i % 5 == 0) {
+            if (sqrt(vlp_pcd[i].x * vlp_pcd[i].x + vlp_pcd[i].y * vlp_pcd[i].y + vlp_pcd[i].z * vlp_pcd[i].z) < 40 && i % 5 == 0) {
                 ds_global_map.push_back(temp);//global ds
             }
 
@@ -390,7 +391,7 @@ void novatel_mapping::transformPoint(pcl::PointCloud<VLPPoint> vlp_pcd,VLPPointC
             vlp_global_point.z = temp.z;
             raw_pcd.push_back(temp);
             scan_local_wo_ds.push_back(vlp_global_point);
-        if (sqrt(vlp_pcd[i].x * vlp_pcd[i].x + vlp_pcd[i].y * vlp_pcd[i].y + vlp_pcd[i].z * vlp_pcd[i].z) < 20 && i % 5 == 0) {
+        if (sqrt(vlp_pcd[i].x * vlp_pcd[i].x + vlp_pcd[i].y * vlp_pcd[i].y + vlp_pcd[i].z * vlp_pcd[i].z) < 40 && i % 5 == 0) {
             scan_local.push_back(vlp_global_point);//local
             }
         }
@@ -420,6 +421,7 @@ void novatel_mapping::transformPoint(pcl::PointCloud<VLPPoint> vlp_pcd,VLPPointC
         std::cout<<"total_tf: "<<ICP.increase.matrix()*T_offset.matrix().cast<float>()<< std::endl;
         Ext_param_ave = (Ext_param_ave.matrix()*index + ICP.increase.matrix().cast<double>()*T_offset.matrix())/(index+1);
         std::cout<<"ave parameter: "<<Ext_param_ave.matrix()<< std::endl;
+
     }
     for (int j = 0; j < ds_global_map.size(); ++j) {
         pcl::PointXYZI temp;
@@ -428,9 +430,9 @@ void novatel_mapping::transformPoint(pcl::PointCloud<VLPPoint> vlp_pcd,VLPPointC
         temp.z = ds_global_map[j].z;
         local_map.push_back(temp);
     }
-    if(local_map.size() > 10*vlp_pcd_save.size()){
+    if(local_map.size() > 7 * scan_local.size()){
         pcl::PointCloud<pcl::PointXYZI> local;
-        for (int j = local_map.size() - 10 * vlp_pcd_save.size(); j < local_map.size(); ++j) {
+        for (int j = local_map.size() - 7 * scan_local.size(); j < local_map.size(); ++j) {
             local.push_back(local_map[j]);
         }
         local_map = local;
