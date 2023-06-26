@@ -42,6 +42,7 @@ public:
                         int &index,pcl::PointCloud<VLPPoint> &vlp_pcd_save,  double time,
                         pcl::PointXYZI &vlp_global_point,pcl::PointCloud<pcl::PointXYZI> &vlp_global_unDownSample,
                         pcl::PointCloud<pcl::PointXYZI> &scan_global,int inter_times);
+    int timeToIndex(double time);
     std::string bag_path;
     std::string save_path;
     std::string global_path;

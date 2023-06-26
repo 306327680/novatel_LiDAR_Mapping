@@ -211,10 +211,11 @@ void novatel_mapping::transformPointCloud() {
     rosbag::Bag bagwrite;
     bagwrite.open("/home/echo/bag/7720_Lidar/gt.bag", rosbag::bagmode::Write);
     Eigen::Matrix4d offset;
-    offset <<       0.999886 ,-0.00384411  ,-0.0146572, -0.00136512,
-                    0.00373848   , 0.999967 ,-0.00722661 , 0.00098448,
-                    0.0146845  ,0.00717099  ,  0.999866 ,  0.0169691,
-                    0      ,     0    ,       0      ,     1 ;
+    offset <<      0.999882 ,-0.00385693  ,-0.0143254  , -0.136246,
+    0.00375012  ,  0.999955 ,-0.00748752  ,-0.0120025,
+    0.0143556 , 0.00743018   , 0.999858   ,0.0343781,
+    0        ,   0      ,     0    ,       1;
+
     Ext_param_ave.matrix() = offset;
     BOOST_FOREACH(rosbag::MessageInstance const m, view)
                 {
@@ -228,6 +229,7 @@ void novatel_mapping::transformPointCloud() {
                     sensor_msgs::PointCloud2::ConstPtr s = m.instantiate<sensor_msgs::PointCloud2>();
                     pcl::fromROSMsg(*s,vlp_pcd);
                     time = s->header.stamp.toSec() + 0.0375;
+                    //time = s->header.stamp.toSec();
                     Eigen::Vector3d result;
                     Eigen::Quaterniond q_result;
                     int index = 0;
@@ -276,6 +278,9 @@ void novatel_mapping::transformPointCloud() {
                         bagwrite.write("/gt_scan",s->header.stamp,LocalMapPC2);
                     }
                     inter_times++;
+                    if(inter_times>4000){
+                        break;
+                    }
                 }
 
     ofs.open(las_path+"/global.las", std::ios::out | std::ios::binary);
@@ -303,7 +308,7 @@ void novatel_mapping::transformPoint(pcl::PointCloud<VLPPoint> vlp_pcd,VLPPointC
                                      int &index,pcl::PointCloud<VLPPoint> &vlp_pcd_save,  double time,
                                      pcl::PointXYZI &vlp_global_point,pcl::PointCloud<pcl::PointXYZI> &vlp_global_unDownSample,
                                      pcl::PointCloud<pcl::PointXYZI> &scan_global,int inter_times) {
-    int index_stamp;
+
     Eigen::Quaterniond q_stamp;
     Eigen::Quaterniond q_offset;
     Eigen::Matrix4d offset;
@@ -319,32 +324,37 @@ void novatel_mapping::transformPoint(pcl::PointCloud<VLPPoint> vlp_pcd,VLPPointC
     q_offset.setIdentity();
     pcl::PointCloud<pcl::PointXYZI> scan_local;
     pcl::PointCloud<pcl::PointXYZI> scan_local_wo_ds;
-    index_stamp = floor(-(time_delay_fix_table[index] - time + time_start-time_start) * 100.0) + index;
-    if(index_stamp<=0){index_stamp=0;}
+    double scan_time = time - time_start;
+    double index_tmpa = floor((scan_time)*100.0);
+    if(index_tmpa >=0 && index_tmpa<odom_buffer.size()-1) {
+        index = floor(-(time_delay_fix_table[index_tmpa] - (scan_time + time_start)) * 100.0) + index_tmpa;
+    }
 
-    q_stamp.x() = odom_buffer[index_stamp].pose.pose.orientation.x;
-    q_stamp.y() = odom_buffer[index_stamp].pose.pose.orientation.y;
-    q_stamp.z() = odom_buffer[index_stamp].pose.pose.orientation.z;
-    q_stamp.w() = odom_buffer[index_stamp].pose.pose.orientation.w;
-    Eigen::Vector3d t_stamp(odom_buffer[index_stamp].pose.pose.position.x,odom_buffer[index_stamp].pose.pose.position.y,
-                        odom_buffer[index_stamp].pose.pose.position.z);
+    if(index<=0){index=0;}
 
+    q_stamp.x() = odom_buffer[index].pose.pose.orientation.x;
+    q_stamp.y() = odom_buffer[index].pose.pose.orientation.y;
+    q_stamp.z() = odom_buffer[index].pose.pose.orientation.z;
+    q_stamp.w() = odom_buffer[index].pose.pose.orientation.w;
+    Eigen::Vector3d t_stamp(odom_buffer[index].pose.pose.position.x,odom_buffer[index].pose.pose.position.y,
+                        odom_buffer[index].pose.pose.position.z);
     T_stamp.setIdentity();
     T_stamp.rotate(q_stamp);
     T_stamp.translation() = t_stamp;
     T_stamp = T_stamp.matrix()* T_offset.matrix();
+
     for (int i = 0; i < vlp_pcd.size(); i = i+1) {
         VLPPoint temp;
-        temp.x = vlp_pcd[i].x;
+        temp.x = vlp_pcd[i].x;//this is origin point cloud
         temp.y = vlp_pcd[i].y;
         temp.z = vlp_pcd[i].z;
         temp.intensity = vlp_pcd[i].intensity;
         temp.time = vlp_pcd[i].time + time - time_start;
         temp.ring = vlp_pcd[i].ring;
 
-        index = floor((temp.time)*100.0);
-        if(index >=0 && index<odom_buffer.size()-1) {
-            index = floor(-(time_delay_fix_table[index] - (temp.time + time_start)) * 100.0) + index;
+        double index_tmp = floor((temp.time)*100.0);
+        if(index_tmp >=0 && index_tmp<odom_buffer.size()-1) {
+            index = floor(-(time_delay_fix_table[index_tmp] - (temp.time + time_start)) * 100.0) + index_tmp;
         }
         if(index >=0 && index<odom_buffer.size()-1){
             Eigen::Quaterniond q;
@@ -352,15 +362,24 @@ void novatel_mapping::transformPoint(pcl::PointCloud<VLPPoint> vlp_pcd,VLPPointC
             q.y() = odom_buffer[index].pose.pose.orientation.y;
             q.z() = odom_buffer[index].pose.pose.orientation.z;
             q.w() = odom_buffer[index].pose.pose.orientation.w;
-            Eigen::Vector3d t(odom_buffer[index].pose.pose.position.x - 0.0,
-                              odom_buffer[index].pose.pose.position.y - 0.0,
-                              odom_buffer[index].pose.pose.position.z + 0.0);
+            Eigen::Quaterniond q1;
+            q1.x() = odom_buffer[index+1].pose.pose.orientation.x;
+            q1.y() = odom_buffer[index+1].pose.pose.orientation.y;
+            q1.z() = odom_buffer[index+1].pose.pose.orientation.z;
+            q1.w() = odom_buffer[index+1].pose.pose.orientation.w;
+            Eigen::Vector3d t(odom_buffer[index].pose.pose.position.x  ,
+                              odom_buffer[index].pose.pose.position.y  ,
+                              odom_buffer[index].pose.pose.position.z  );
+            Eigen::Vector3d t1(odom_buffer[index+1].pose.pose.position.x  ,
+                               odom_buffer[index+1].pose.pose.position.y  ,
+                               odom_buffer[index+1].pose.pose.position.z  );
+
             Eigen::Affine3d T_ins;
             T_ins.setIdentity();
-            T_ins.rotate(q);
-            T_ins.translation() =t;
+            T_ins.rotate(q.slerp(temp.time - index_tmp/100.0,q1));
+            T_ins.translation() = t * (1-(temp.time - index_tmp/100.0)) + t1*(temp.time-index_tmp/100.0);
             Eigen::Vector3d point(temp.x,temp.y,temp.z);
-            pcl::transformPoint(point,point,T_ins*T_offset);
+            pcl::transformPoint(point,point,T_ins*T_offset);//transfer with offset
             vlp_global_point.x = temp.x;
             vlp_global_point.y = temp.y;
             vlp_global_point.z = temp.z;
@@ -368,8 +387,8 @@ void novatel_mapping::transformPoint(pcl::PointCloud<VLPPoint> vlp_pcd,VLPPointC
             temp.x = point.x();
             temp.y = point.y();
             temp.z = point.z();
-            if (sqrt(vlp_pcd[i].x * vlp_pcd[i].x + vlp_pcd[i].y * vlp_pcd[i].y + vlp_pcd[i].z * vlp_pcd[i].z) < 40 && i % 5 == 0) {
-                ds_global_map.push_back(temp);//global ds
+            if (sqrt(vlp_pcd[i].x * vlp_pcd[i].x + vlp_pcd[i].y * vlp_pcd[i].y + vlp_pcd[i].z * vlp_pcd[i].z) < 45 && i % 5 == 0) {
+                ds_global_map.push_back(temp);//global ds           T_ins*T_offset
             }
 
             vlp_pcd_save.push_back(temp);//global
@@ -391,7 +410,7 @@ void novatel_mapping::transformPoint(pcl::PointCloud<VLPPoint> vlp_pcd,VLPPointC
             vlp_global_point.z = temp.z;
             raw_pcd.push_back(temp);
             scan_local_wo_ds.push_back(vlp_global_point);
-        if (sqrt(vlp_pcd[i].x * vlp_pcd[i].x + vlp_pcd[i].y * vlp_pcd[i].y + vlp_pcd[i].z * vlp_pcd[i].z) < 40 && i % 5 == 0) {
+        if (sqrt(vlp_pcd[i].x * vlp_pcd[i].x + vlp_pcd[i].y * vlp_pcd[i].y + vlp_pcd[i].z * vlp_pcd[i].z) < 45 && i % 5 == 0) {
             scan_local.push_back(vlp_global_point);//local
             }
         }
@@ -402,8 +421,7 @@ void novatel_mapping::transformPoint(pcl::PointCloud<VLPPoint> vlp_pcd,VLPPointC
         pcl::PointCloud<pcl::PointXYZI>::Ptr local_map_local_ptr(new pcl::PointCloud<pcl::PointXYZI>);
         pcl::PointCloud<pcl::PointXYZI>::Ptr raw_pcd_ptr(new pcl::PointCloud<pcl::PointXYZI>);
         *raw_pcd_ptr = scan_local;
-        pcl::transformPointCloud(local_map,*local_map_local_ptr,T_stamp.inverse());
-        std::cerr<<"a: "<<raw_pcd_ptr->size()<<" b: "<<local_map_local_ptr->size()<<std::endl;
+        pcl::transformPointCloud(local_map,*local_map_local_ptr,T_stamp.inverse()); //T_ins*T_offset * T_stamp.inverse()
         ICP.normalIcpRegistration(raw_pcd_ptr,*local_map_local_ptr);
         T_stamp = T_stamp * ICP.increase.matrix().cast<double>();
         pcl::IterativeClosestPoint<pcl::PointXYZI, pcl::PointXYZI> icp;
@@ -417,7 +435,7 @@ void novatel_mapping::transformPoint(pcl::PointCloud<VLPPoint> vlp_pcd,VLPPointC
         icp_error.pose.pose.orientation.y = qq.y();
         icp_error.pose.pose.orientation.z = qq.z();
         icp_error.pose.pose.orientation.w = qq.w();
-        std::cout<<ICP.increase.matrix()<<" size: "<<scan_global.size()<< std::endl;
+        pcl::transformPointCloud(vlp_pcd,raw_pcd,T_stamp);
         std::cout<<"total_tf: "<<ICP.increase.matrix()*T_offset.matrix().cast<float>()<< std::endl;
         Ext_param_ave = (Ext_param_ave.matrix()*index + ICP.increase.matrix().cast<double>()*T_offset.matrix())/(index+1);
         std::cout<<"ave parameter: "<<Ext_param_ave.matrix()<< std::endl;
@@ -430,11 +448,15 @@ void novatel_mapping::transformPoint(pcl::PointCloud<VLPPoint> vlp_pcd,VLPPointC
         temp.z = ds_global_map[j].z;
         local_map.push_back(temp);
     }
-    if(local_map.size() > 7 * scan_local.size()){
+    if(local_map.size() > 8 * scan_local.size()){
         pcl::PointCloud<pcl::PointXYZI> local;
-        for (int j = local_map.size() - 7 * scan_local.size(); j < local_map.size(); ++j) {
+        for (int j = local_map.size() - 8 * scan_local.size(); j < local_map.size(); ++j) {
             local.push_back(local_map[j]);
         }
         local_map = local;
     }
+}
+
+int novatel_mapping::timeToIndex(double time) {
+    return 0;
 }
